@@ -19,6 +19,7 @@ node_modules/
 # Chrome extension development
 *.crx
 *.pem
+*.zip
 
 # Temporary files
 *.tmp

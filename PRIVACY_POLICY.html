@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - NodScroll</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: white;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 0.5em;
+      color: #1a1a1a;
+    }
+
+    h2 {
+      font-size: 1.5em;
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+      color: #2a2a2a;
+    }
+
+    p {
+      margin-bottom: 1em;
+    }
+
+    ul {
+      margin-left: 2em;
+      margin-bottom: 1em;
+    }
+
+    li {
+      margin-bottom: 0.5em;
+    }
+
+    .last-updated {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 2em;
+    }
+
+    .contact {
+      background: #f0f0f0;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 2em;
+    }
+
+    a {
+      color: #4a90d9;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Privacy Policy</h1>
+    <p class="last-updated">Last Updated: February 6, 2026</p>
+
+    <h2>Overview</h2>
+    <p>
+      NodScroll is committed to protecting your privacy. This extension does NOT collect,
+      store, or transmit any personal data. All processing happens locally in your browser.
+    </p>
+
+    <h2>Data Collection</h2>
+    <p>
+      <strong>NodScroll does NOT collect any data.</strong> We do not:
+    </p>
+    <ul>
+      <li>Collect personal information</li>
+      <li>Track your browsing activity</li>
+      <li>Store or upload camera images/video</li>
+      <li>Use analytics or tracking services</li>
+      <li>Share data with third parties</li>
+    </ul>
+
+    <h2>Camera Usage</h2>
+    <p>NodScroll uses your camera for head gesture detection with the following principles:</p>
+    <ul>
+      <li><strong>Explicit Consent:</strong> Camera is only accessed when you explicitly enable tracking by clicking "Start"</li>
+      <li><strong>Local Processing:</strong> All video processing happens locally in your browser using MediaPipe Face Mesh</li>
+      <li><strong>No Storage:</strong> No images or video frames are saved, uploaded, or shared</li>
+      <li><strong>Immediate Stop:</strong> Camera access stops immediately when you disable tracking or close the extension</li>
+      <li><strong>Your Control:</strong> You can revoke camera permission at any time through browser settings</li>
+    </ul>
+
+    <h2>MediaPipe Face Mesh</h2>
+    <p>
+      NodScroll uses Google's MediaPipe Face Mesh library for face landmark detection.
+      This library runs entirely in your browser (client-side) and does not send any
+      data to Google or any external servers.
+    </p>
+
+    <h2>Data Storage</h2>
+    <p>The only data stored locally on your device includes:</p>
+    <ul>
+      <li>Your preference settings (sensitivity, scroll amount, language, etc.)</li>
+      <li>These settings are stored using Chrome's Storage API</li>
+      <li>No personal or identifying information is included</li>
+    </ul>
+
+    <h2>Permissions Explained</h2>
+    <p>NodScroll requests the following permissions:</p>
+    <ul>
+      <li><strong>Camera:</strong> Required for head gesture detection</li>
+      <li><strong>activeTab:</strong> Required to send scroll commands to the current tab</li>
+      <li><strong>scripting:</strong> Required to inject content script for page scrolling</li>
+      <li><strong>storage:</strong> Required to save your preference settings</li>
+      <li><strong>offscreen:</strong> Required to run face detection in background</li>
+    </ul>
+
+    <h2>Third-Party Services</h2>
+    <p>
+      NodScroll does NOT use any third-party services for analytics, advertising,
+      or data collection. The only third-party code is MediaPipe Face Mesh,
+      which runs locally and sends no data externally.
+    </p>
+
+    <h2>Children's Privacy</h2>
+    <p>
+      NodScroll does not collect any personal information from anyone,
+      including children under 13. The extension can be used by anyone
+      with parental consent where required.
+    </p>
+
+    <h2>Open Source</h2>
+    <p>
+      NodScroll is open source. You can review the complete source code at:
+      <a href="https://github.com/hotea/NodScroll" target="_blank">
+        https://github.com/hotea/NodScroll
+      </a>
+    </p>
+
+    <h2>Changes to This Policy</h2>
+    <p>
+      We may update this privacy policy from time to time. We will notify users
+      of any material changes by updating the "Last Updated" date at the top of
+      this policy.
+    </p>
+
+    <h2>Your Rights</h2>
+    <p>Since we don't collect any data, there is no data to access, modify, or delete. You have complete control by:</p>
+    <ul>
+      <li>Disabling the extension at any time</li>
+      <li>Revoking camera permission through browser settings</li>
+      <li>Uninstalling the extension completely</li>
+    </ul>
+
+    <div class="contact">
+      <h2>Contact Us</h2>
+      <p>
+        If you have any questions or concerns about this privacy policy or NodScroll's practices:
+      </p>
+      <ul>
+        <li>Email: <a href="mailto:oksukai@gmail.com">oksukai@gmail.com</a></li>
+        <li>GitHub: <a href="https://github.com/hotea/NodScroll" target="_blank">github.com/hotea/NodScroll</a></li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

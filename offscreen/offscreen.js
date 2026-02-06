@@ -401,18 +401,19 @@ function handleAction(action) {
   switch (action) {
     case 'NOD_DOWN': sendScrollCommand(invert ? 'up' : 'down', 300); break;
     case 'NOD_UP':   sendScrollCommand(invert ? 'down' : 'up', 300); break;
+    // 注意：摄像头画面在 popup 中是镜像的，所以左右需要交换
     case 'TURN_LEFT':
       if (turnAction === 'switchTab') {
-        sendTabCommand('prev');
+        sendTabCommand('next'); // 镜像后：用户向左 = 实际向右 = 下一个
       } else {
-        sendNavigateCommand('back');
+        sendNavigateCommand('forward');
       }
       break;
     case 'TURN_RIGHT':
       if (turnAction === 'switchTab') {
-        sendTabCommand('next');
+        sendTabCommand('prev'); // 镜像后：用户向右 = 实际向左 = 上一个
       } else {
-        sendNavigateCommand('forward');
+        sendNavigateCommand('back');
       }
       break;
   }
