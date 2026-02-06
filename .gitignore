@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node modules (if any)
+node_modules/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Chrome extension development
+*.crx
+*.pem
+
+# Temporary files
+*.tmp
+.cache/
+
+# Backup files
+popup-old.js

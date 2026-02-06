@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NodScroll</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 data-i18n="appName">NodScroll</h1>
+      <span class="status-badge" id="statusBadge" data-i18n="statusInitializing">Initializing</span>
+    </header>
+
+    <main>
+      <!-- Camera Preview -->
+      <div class="camera-container">
+        <canvas id="overlay"></canvas>
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <span>📷</span>
+          <p data-i18n="cameraPreview">Camera preview</p>
+        </div>
+        <!-- Permission Error Overlay - Not used anymore, kept for compatibility -->
+        <div class="permission-overlay hidden" id="permissionOverlay">
+          <div class="permission-content">
+            <span class="permission-icon">🎥</span>
+            <h3 id="permissionTitle" data-i18n="cameraPermissionTitle">Camera Permission Required</h3>
+            <p id="permissionDesc" data-i18n="cameraPermissionDesc">NodScroll needs camera access to detect head gestures.</p>
+            <button id="retryBtn" class="btn btn-primary btn-large" data-i18n="btnRetry">Retry</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pose Display -->
+      <div class="pose-display">
+        <div class="pose-item">
+          <span class="pose-label" data-i18n="pitch">Pitch</span>
+          <div class="pose-bar-container">
+            <div class="pose-bar pitch-bar" id="pitchBar"></div>
+          </div>
+          <span class="pose-value" id="pitchValue">0°</span>
+        </div>
+        <div class="pose-item">
+          <span class="pose-label" data-i18n="yaw">Yaw</span>
+          <div class="pose-bar-container">
+            <div class="pose-bar yaw-bar" id="yawBar"></div>
+          </div>
+          <span class="pose-value" id="yawValue">0°</span>
+        </div>
+      </div>
+
+      <!-- Action Indicator -->
+      <div class="action-indicator" id="actionIndicator">
+        <div class="action-icon" id="actionIcon">⬆️</div>
+        <div class="action-text" id="actionText" data-i18n="actionReady">Ready</div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button id="toggleBtn" class="btn btn-primary" data-i18n="btnStart">Start</button>
+        <button id="calibrateBtn" class="btn btn-secondary" disabled data-i18n="btnCalibrate">Calibrate</button>
+      </div>
+
+      <!-- Settings Panel -->
+      <details class="settings-panel">
+        <summary data-i18n="settings">Settings</summary>
+        <div class="settings-content">
+          <div class="setting-item">
+            <label for="languageSelect" data-i18n="settingLanguage">Language</label>
+            <select id="languageSelect" class="setting-select">
+              <option value="en">English</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="scrollDirection" data-i18n="settingScrollDirection">Scroll Direction</label>
+            <select id="scrollDirection" class="setting-select">
+              <option value="natural" data-i18n="scrollDirectionNatural">Natural (Mac)</option>
+              <option value="classic" data-i18n="scrollDirectionClassic">Classic (Windows)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="turnAction" data-i18n="settingTurnAction">Turn Action</label>
+            <select id="turnAction" class="setting-select">
+              <option value="switchTab" data-i18n="turnActionSwitchTab">Switch Tab</option>
+              <option value="navigate" data-i18n="turnActionNavigate">Back/Forward</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="pitchThreshold" data-i18n="settingPitchThreshold">Pitch Threshold</label>
+            <input type="range" id="pitchThreshold" min="3" max="30" value="8">
+            <span id="pitchThresholdValue">8°</span>
+          </div>
+          <div class="setting-item">
+            <label for="yawThreshold" data-i18n="settingYawThreshold">Yaw Threshold</label>
+            <input type="range" id="yawThreshold" min="10" max="40" value="20">
+            <span id="yawThresholdValue">20°</span>
+          </div>
+          <div class="setting-item">
+            <label for="scrollAmount" data-i18n="settingScrollAmount">Scroll Amount</label>
+            <input type="range" id="scrollAmount" min="100" max="800" value="300" step="50">
+            <span id="scrollAmountValue">300px</span>
+          </div>
+          <div class="setting-item">
+            <label for="cooldown" data-i18n="settingCooldown">Cooldown</label>
+            <input type="range" id="cooldown" min="300" max="2000" value="800" step="100">
+            <span id="cooldownValue">800ms</span>
+          </div>
+        </div>
+      </details>
+
+      <!-- Help -->
+      <div class="help-section">
+        <h3 data-i18n="helpTitle">Gestures</h3>
+        <ul id="gestureHelp">
+          <li><strong data-i18n="helpNodDown">Nod down</strong> → <span id="helpNodDownAction" data-i18n="helpScrollUp">Scroll up</span></li>
+          <li><strong data-i18n="helpNodUp">Nod up</strong> → <span id="helpNodUpAction" data-i18n="helpScrollDown">Scroll down</span></li>
+          <li><strong data-i18n="helpTurnLeft">Turn left</strong> → <span id="helpTurnLeftAction" data-i18n="helpPrevTab">Previous tab</span></li>
+          <li><strong data-i18n="helpTurnRight">Turn right</strong> → <span id="helpTurnRightAction" data-i18n="helpNextTab">Next tab</span></li>
+        </ul>
+      </div>
+    </main>
+
+    <footer>
+      <p data-i18n="footerPrivacy">All processing is local. No data is uploaded.</p>
+    </footer>
+  </div>
+
+  <!-- Load MediaPipe (bundled locally) -->
+  <script src="../lib/mediapipe/face_mesh.js"></script>
+  <script src="../lib/mediapipe/camera_utils.js"></script>
+
+  <!-- Load our scripts -->
+  <script src="../lib/i18n.js"></script>
+  <script src="../lib/head-tracker.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

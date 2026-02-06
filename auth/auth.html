@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NodScroll - Camera Permission</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      background: #2a2a4a;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    p {
+      font-size: 14px;
+      color: #aaa;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .btn {
+      padding: 14px 32px;
+      background: #4a90d9;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: #3a7fc9;
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status.success {
+      background: rgba(15, 81, 50, 0.3);
+      color: #75d9a0;
+      border: 1px solid rgba(117, 217, 160, 0.3);
+      display: block;
+    }
+
+    .status.error {
+      background: rgba(132, 32, 41, 0.3);
+      color: #f8d7da;
+      border: 1px solid rgba(248, 215, 218, 0.3);
+      display: block;
+    }
+
+    .steps {
+      text-align: left;
+      background: #1a1a2e;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-size: 13px;
+    }
+
+    .steps ol {
+      padding-left: 20px;
+    }
+
+    .steps li {
+      margin-bottom: 8px;
+      color: #ccc;
+    }
+
+    video {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">🎥</div>
+    <h1 id="title">Camera Permission Required</h1>
+    <p id="description">NodScroll needs camera access to detect head gestures and control scrolling.</p>
+
+    <button id="grantBtn" class="btn">Grant Camera Access</button>
+
+    <div id="status" class="status"></div>
+
+    <div class="steps">
+      <strong>What happens next:</strong>
+      <ol>
+        <li>Click the button above</li>
+        <li>Your browser will ask for camera permission</li>
+        <li>Click "Allow" in the permission dialog</li>
+        <li>This page will close automatically</li>
+        <li>You can then use NodScroll from the extension popup</li>
+      </ol>
+    </div>
+  </div>
+
+  <video id="video" autoplay></video>
+
+  <script src="auth.js"></script>
+</body>
+</html>
