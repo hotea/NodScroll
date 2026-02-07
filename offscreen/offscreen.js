@@ -25,7 +25,7 @@ captureCanvas.height = 240;
 let captureCtx = captureCanvas.getContext('2d', { willReadFrequently: true });
 
 // 鼻尖运动轨迹
-const TRAIL_MAX = 40;
+const TRAIL_MAX = 60; // 增加轨迹长度（从40增加到60）
 let noseTrail = [];
 
 // 预览发送控制
@@ -402,14 +402,14 @@ function sendPreviewFrame(landmarks) {
       previewCtx.lineCap = 'round';
       previewCtx.lineJoin = 'round';
 
-      // 绘制连续的轨迹路径，使用渐变色
+      // 绘制连续的轨迹路径，使用渐变色和更粗的线条
       for (let i = 1; i < noseTrail.length; i++) {
         const progress = i / noseTrail.length;
-        const alpha = 0.3 + progress * 0.7; // 透明度从 0.3 到 1.0
+        const alpha = 0.4 + progress * 0.6; // 透明度从 0.4 到 1.0
         const hue = 180 + progress * 80; // 色相从青色到绿色
-        const width = 2 + progress * 2; // 线宽从 2 到 4
+        const width = 4 + progress * 6; // 线宽从 4 到 10（更粗）
 
-        previewCtx.strokeStyle = `hsla(${hue}, 85%, 60%, ${alpha})`;
+        previewCtx.strokeStyle = `hsla(${hue}, 90%, 55%, ${alpha})`;
         previewCtx.lineWidth = width;
         previewCtx.beginPath();
         previewCtx.moveTo(noseTrail[i - 1].x * pw, noseTrail[i - 1].y * ph);
@@ -420,18 +420,24 @@ function sendPreviewFrame(landmarks) {
       // 最新点：更大更亮的指示器
       const last = noseTrail[noseTrail.length - 1];
 
-      // 外圈光晕
-      previewCtx.fillStyle = 'rgba(0, 255, 204, 0.3)';
+      // 最外圈光晕（更大）
+      previewCtx.fillStyle = 'rgba(0, 255, 204, 0.2)';
       previewCtx.beginPath();
-      previewCtx.arc(last.x * pw, last.y * ph, 8, 0, Math.PI * 2);
+      previewCtx.arc(last.x * pw, last.y * ph, 15, 0, Math.PI * 2);
+      previewCtx.fill();
+
+      // 中圈光晕
+      previewCtx.fillStyle = 'rgba(0, 255, 204, 0.4)';
+      previewCtx.beginPath();
+      previewCtx.arc(last.x * pw, last.y * ph, 10, 0, Math.PI * 2);
       previewCtx.fill();
 
       // 内圈亮点
       previewCtx.fillStyle = '#00ffcc';
       previewCtx.shadowColor = '#00ffcc';
-      previewCtx.shadowBlur = 10;
+      previewCtx.shadowBlur = 15;
       previewCtx.beginPath();
-      previewCtx.arc(last.x * pw, last.y * ph, 5, 0, Math.PI * 2);
+      previewCtx.arc(last.x * pw, last.y * ph, 6, 0, Math.PI * 2);
       previewCtx.fill();
       previewCtx.shadowBlur = 0;
     }
@@ -450,17 +456,27 @@ function sendPreviewFrame(landmarks) {
 
       keyPoints.forEach(({ idx, color }) => {
         const p = landmarks[idx];
-        // 外圈（光晕效果）
-        previewCtx.fillStyle = color + '40'; // 添加透明度
+
+        // 最外圈光晕
+        previewCtx.fillStyle = color + '30'; // 30% 透明度
+        previewCtx.beginPath();
+        previewCtx.arc(p.x * pw, p.y * ph, 12, 0, Math.PI * 2);
+        previewCtx.fill();
+
+        // 中圈光晕
+        previewCtx.fillStyle = color + '60'; // 60% 透明度
+        previewCtx.beginPath();
+        previewCtx.arc(p.x * pw, p.y * ph, 8, 0, Math.PI * 2);
+        previewCtx.fill();
+
+        // 内圈（实心点）- 更大更清晰
+        previewCtx.fillStyle = color;
+        previewCtx.shadowColor = color;
+        previewCtx.shadowBlur = 8;
         previewCtx.beginPath();
         previewCtx.arc(p.x * pw, p.y * ph, 5, 0, Math.PI * 2);
         previewCtx.fill();
-
-        // 内圈（实心点）
-        previewCtx.fillStyle = color;
-        previewCtx.beginPath();
-        previewCtx.arc(p.x * pw, p.y * ph, 3, 0, Math.PI * 2);
-        previewCtx.fill();
+        previewCtx.shadowBlur = 0;
       });
 
       // 面部轮廓线（更平滑和清晰）
