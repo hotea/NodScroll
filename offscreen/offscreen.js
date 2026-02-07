@@ -230,9 +230,22 @@ async function startTracking(config) {
     video.srcObject = stream;
     await video.play();
 
-    // 预览 canvas - 使用高分辨率
-    previewCanvas.width = 640;  // 从 320 提升到 640
-    previewCanvas.height = 480;  // 从 240 提升到 480
+    // 预览 canvas - 使用视频的实际分辨率（避免缩放模糊）
+    // 等待一帧确保 videoWidth/videoHeight 已设置
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const actualWidth = video.videoWidth || 1280;
+    const actualHeight = video.videoHeight || 720;
+
+    previewCanvas.width = actualWidth;
+    previewCanvas.height = actualHeight;
+
+    // 禁用图像平滑以获得更清晰的像素（避免插值模糊）
+    previewCtx.imageSmoothingEnabled = false;
+
+    // 记录实际获得的视频分辨率
+    console.log('✅ Video resolution:', actualWidth, 'x', actualHeight);
+    console.log('✅ Preview canvas:', previewCanvas.width, 'x', previewCanvas.height);
 
     // 创建 sandbox 并初始化 FaceMesh
     await createSandbox();
@@ -374,6 +387,10 @@ function sendPreviewFrame(landmarks) {
   const pw = previewCanvas.width;
   const ph = previewCanvas.height;
 
+  // 确保每次绘制都禁用图像平滑（防止被重置）
+  previewCtx.imageSmoothingEnabled = false;
+
+  // 直接绘制视频到canvas（1:1像素映射，无缩放）
   previewCtx.drawImage(video, 0, 0, pw, ph);
 
   // 鼻尖运动轨迹

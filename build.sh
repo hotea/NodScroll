@@ -1,7 +1,8 @@
 #!/bin/bash
 # NodScroll 扩展打包脚本
 
-VERSION="1.0.0"
+# 从 manifest.json 读取版本号
+VERSION=$(grep -o '"version": "[^"]*"' manifest.json | cut -d'"' -f4)
 PACKAGE_NAME="nod-scroll-v${VERSION}.zip"
 
 echo "🔨 NodScroll 扩展打包"

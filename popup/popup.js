@@ -59,6 +59,9 @@ async function init() {
   // Set up canvas context
   ctx = overlay.getContext('2d');
 
+  // 禁用图像平滑以保持清晰度
+  ctx.imageSmoothingEnabled = false;
+
   // Set up event listeners
   setupEventListeners();
 
@@ -414,6 +417,10 @@ function updateVideoPreview(frameUrl) {
 
     overlay.width = canvasWidth;
     overlay.height = canvasHeight;
+
+    // 确保禁用图像平滑（canvas大小改变可能重置设置）
+    ctx.imageSmoothingEnabled = false;
+
     ctx.clearRect(0, 0, overlay.width, overlay.height);
     ctx.drawImage(img, 0, 0, overlay.width, overlay.height);
 
