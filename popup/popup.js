@@ -37,6 +37,7 @@ const cooldownValue = document.getElementById('cooldownValue');
 // State
 let isRunning = false;
 let ctx = null;
+let lastPreviewBlobUrl = null; // 用于清理 Blob URL
 
 // Action icons and text keys
 const ACTION_CONFIG = {
@@ -392,8 +393,8 @@ function handleStatusUpdate(message) {
 /**
  * Update video preview from frame data
  */
-function updateVideoPreview(dataUrl) {
-  if (!dataUrl || !ctx) return;
+function updateVideoPreview(frameUrl) {
+  if (!frameUrl || !ctx) return;
 
   const img = new Image();
   img.onload = () => {
@@ -415,8 +416,14 @@ function updateVideoPreview(dataUrl) {
     overlay.height = canvasHeight;
     ctx.clearRect(0, 0, overlay.width, overlay.height);
     ctx.drawImage(img, 0, 0, overlay.width, overlay.height);
+
+    // 清理旧的 Blob URL（如果存在）
+    if (lastPreviewBlobUrl && lastPreviewBlobUrl !== frameUrl) {
+      URL.revokeObjectURL(lastPreviewBlobUrl);
+    }
+    lastPreviewBlobUrl = frameUrl;
   };
-  img.src = dataUrl;
+  img.src = frameUrl;
 }
 
 /**

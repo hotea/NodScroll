@@ -30,7 +30,10 @@ let noseTrail = [];
 
 // 预览发送控制
 let lastPreviewTime = 0;
-const PREVIEW_INTERVAL = 80; // ~12fps
+const PREVIEW_INTERVAL = 50; // ~20fps（更流畅）
+
+// Blob URL 管理
+let lastBlobUrl = null;
 
 console.log('Offscreen document loaded');
 
@@ -215,16 +218,21 @@ async function startTracking(config) {
       }
     } catch (e) { /* 忽略 */ }
 
-    // 获取摄像头
+    // 获取摄像头 - 高清分辨率
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: 640, height: 480 }
+      video: {
+        facingMode: 'user',
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30 }
+      }
     });
     video.srcObject = stream;
     await video.play();
 
-    // 预览 canvas
-    previewCanvas.width = 320;
-    previewCanvas.height = 240;
+    // 预览 canvas - 使用高分辨率
+    previewCanvas.width = 640;  // 从 320 提升到 640
+    previewCanvas.height = 480;  // 从 240 提升到 480
 
     // 创建 sandbox 并初始化 FaceMesh
     await createSandbox();
@@ -440,9 +448,19 @@ function sendPreviewFrame(landmarks) {
     previewCtx.fillText(`${Math.round(progress * 100)}%`, pw / 2, barY - 4);
   }
 
+  // 使用 Blob URL 替代 base64，性能更好
   try {
-    const dataUrl = previewCanvas.toDataURL('image/jpeg', 0.55);
-    notifyPopup('FRAME_UPDATE', { frame: dataUrl });
+    previewCanvas.toBlob((blob) => {
+      if (blob) {
+        // 清理旧的 Blob URL
+        if (lastBlobUrl) {
+          URL.revokeObjectURL(lastBlobUrl);
+        }
+        // 创建新的 Blob URL
+        lastBlobUrl = URL.createObjectURL(blob);
+        notifyPopup('FRAME_UPDATE', { frame: lastBlobUrl });
+      }
+    }, 'image/jpeg', 0.92); // 更高的质量（0.92）
   } catch (e) { /* 忽略 */ }
 }
 
