@@ -39,6 +39,7 @@ console.log('Offscreen document loaded');
 
 let scrollDirection = 'natural'; // 'classic' 或 'natural'
 let turnAction = 'switchTab'; // 'switchTab' 或 'navigate'
+let highQualityMode = true; // 高质量模式：减少叠加层，优先视频清晰度
 
 // 监听 chrome 消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -218,13 +219,14 @@ async function startTracking(config) {
       }
     } catch (e) { /* 忽略 */ }
 
-    // 获取摄像头 - 高清分辨率
+    // 获取摄像头 - 请求最高清晰度
     stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: 'user',
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        frameRate: { ideal: 30 }
+        width: { ideal: 1920, min: 1280 },
+        height: { ideal: 1080, min: 720 },
+        frameRate: { ideal: 30, min: 24 },
+        aspectRatio: { ideal: 16/9 }
       }
     });
     video.srcObject = stream;
@@ -393,8 +395,10 @@ function sendPreviewFrame(landmarks) {
   // 直接绘制视频到canvas（1:1像素映射，无缩放）
   previewCtx.drawImage(video, 0, 0, pw, ph);
 
-  // 鼻尖运动轨迹
-  if (noseTrail.length > 1) {
+  // 高质量模式：减少叠加层，保持视频原始清晰度
+  if (!highQualityMode) {
+    // 鼻尖运动轨迹（仅在非高质量模式下绘制）
+    if (noseTrail.length > 1) {
     previewCtx.lineCap = 'round';
     previewCtx.lineJoin = 'round';
     for (let i = 1; i < noseTrail.length; i++) {
@@ -416,10 +420,10 @@ function sendPreviewFrame(landmarks) {
     previewCtx.arc(last.x * pw, last.y * ph, 4, 0, Math.PI * 2);
     previewCtx.fill();
     previewCtx.shadowBlur = 0;
-  }
+    }
 
-  // 面部特征点和轮廓
-  if (landmarks) {
+    // 面部特征点和轮廓（仅在非高质量模式下绘制）
+    if (landmarks) {
     previewCtx.fillStyle = '#4a90d9';
     [1, 199, 33, 263, 61, 291].forEach(idx => {
       const p = landmarks[idx];
@@ -439,9 +443,10 @@ function sendPreviewFrame(landmarks) {
       i === 0 ? previewCtx.moveTo(p.x * pw, p.y * ph) : previewCtx.lineTo(p.x * pw, p.y * ph);
     });
     previewCtx.stroke();
-  }
+    }
+  } // 结束高质量模式条件
 
-  // 校准进度条
+  // 校准进度条（始终显示，用户需要知道校准状态）
   if (headTracker && !headTracker.isCalibrated) {
     const progress = headTracker.calibrationFrames.length / 30;
     const barW = pw * 0.6;
@@ -466,7 +471,9 @@ function sendPreviewFrame(landmarks) {
   }
 
   // 使用 Blob URL 替代 base64，性能更好
+  // 使用 WebP 格式（更好的质量/大小平衡）或 PNG（无损）
   try {
+    // 优先尝试 WebP（质量更好，文件更小）
     previewCanvas.toBlob((blob) => {
       if (blob) {
         // 清理旧的 Blob URL
@@ -477,8 +484,21 @@ function sendPreviewFrame(landmarks) {
         lastBlobUrl = URL.createObjectURL(blob);
         notifyPopup('FRAME_UPDATE', { frame: lastBlobUrl });
       }
-    }, 'image/jpeg', 0.92); // 更高的质量（0.92）
-  } catch (e) { /* 忽略 */ }
+    }, 'image/webp', 0.98); // WebP 高质量（接近无损）
+  } catch (e) {
+    // 降级到 PNG（无损但文件更大）
+    try {
+      previewCanvas.toBlob((blob) => {
+        if (blob) {
+          if (lastBlobUrl) {
+            URL.revokeObjectURL(lastBlobUrl);
+          }
+          lastBlobUrl = URL.createObjectURL(blob);
+          notifyPopup('FRAME_UPDATE', { frame: lastBlobUrl });
+        }
+      }, 'image/png');
+    } catch (e2) { /* 忽略 */ }
+  }
 }
 
 /**
