@@ -33,6 +33,10 @@ popup-old.js
 docs/*
 !docs/README.md
 
+# Development documentation
+CHANGELOG.md
+PROJECT_STRUCTURE.md
+
 # Development scripts
 # Keep directory structure but ignore content
 scripts/*
