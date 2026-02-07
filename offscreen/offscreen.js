@@ -28,6 +28,9 @@ let captureCtx = captureCanvas.getContext('2d', { willReadFrequently: true });
 const TRAIL_MAX = 60; // 增加轨迹长度（从40增加到60）
 let noseTrail = [];
 
+// 保存上一次的 landmarks，避免关键点闪烁
+let lastLandmarks = null;
+
 // 预览发送控制
 let lastPreviewTime = 0;
 const PREVIEW_INTERVAL = 50; // ~20fps（更流畅）
@@ -332,6 +335,9 @@ function onFaceResults(landmarks) {
     return;
   }
 
+  // 保存 landmarks，防止关键点闪烁
+  lastLandmarks = landmarks;
+
   // 记录鼻尖轨迹
   const nose = landmarks[1];
   noseTrail.push({ x: nose.x, y: nose.y });
@@ -395,6 +401,9 @@ function sendPreviewFrame(landmarks) {
   // 直接绘制视频到canvas（1:1像素映射，无缩放）
   previewCtx.drawImage(video, 0, 0, pw, ph);
 
+  // 使用上一次的 landmarks 作为后备，避免关键点闪烁
+  const displayLandmarks = landmarks || lastLandmarks;
+
   // 高质量模式：减少叠加层，保持视频原始清晰度
   if (!highQualityMode) {
     // 鼻尖运动轨迹（连续线条，从旧到新渐变）
@@ -443,7 +452,7 @@ function sendPreviewFrame(landmarks) {
     }
 
     // 面部特征点和轮廓（仅在非高质量模式下绘制）
-    if (landmarks) {
+    if (displayLandmarks) {
       // 关键特征点：鼻尖、下巴、眼睛、嘴角
       const keyPoints = [
         { idx: 1, label: 'Nose', color: '#ff6b6b' },      // 鼻尖 - 红色
@@ -455,7 +464,7 @@ function sendPreviewFrame(landmarks) {
       ];
 
       keyPoints.forEach(({ idx, color }) => {
-        const p = landmarks[idx];
+        const p = displayLandmarks[idx];
 
         // 最外圈光晕
         previewCtx.fillStyle = color + '30'; // 30% 透明度
@@ -491,7 +500,7 @@ function sendPreviewFrame(landmarks) {
 
       previewCtx.beginPath();
       oval.forEach((idx, i) => {
-        const p = landmarks[idx];
+        const p = displayLandmarks[idx];
         i === 0 ? previewCtx.moveTo(p.x * pw, p.y * ph) : previewCtx.lineTo(p.x * pw, p.y * ph);
       });
       previewCtx.stroke();
