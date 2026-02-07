@@ -143,6 +143,13 @@ Customize the extension to your preferences:
 **Extension icon not showing?**
 - Pin the extension: Click the puzzle icon in toolbar → Pin NodScroll
 
+### 📚 Documentation
+
+For developers and publishers:
+- **Publishing Guide**: See `docs/` directory for complete publishing instructions
+- **Design Assets**: Use `scripts/` for generating promotional materials
+- **Store Listings**: Find all store information in `docs/STORE_LISTING.md`
+
 ### 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -288,6 +295,13 @@ cd NodScroll
 
 **扩展图标不显示？**
 - 固定扩展：点击工具栏中的拼图图标 → 固定 NodScroll
+
+### 📚 开发文档
+
+开发者和发布者资源：
+- **发布指南**: 查看 `docs/` 目录获取完整发布说明
+- **设计资源**: 使用 `scripts/` 生成营销材料
+- **商店信息**: 在 `docs/STORE_LISTING.md` 中查找所有商店信息
 
 ### 🤝 参与贡献
 

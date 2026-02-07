@@ -27,3 +27,19 @@ node_modules/
 
 # Backup files
 popup-old.js
+
+# Documentation and guides (for development only)
+# Keep directory structure but ignore content
+docs/*
+!docs/README.md
+
+# Development scripts
+# Keep directory structure but ignore content
+scripts/*
+!scripts/README.md
+
+# Generated promotional images
+promo_tiles/
+
+# Screenshot working directory
+screenshots/
