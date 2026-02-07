@@ -85,9 +85,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'STOP_TRACKING') {
-    chrome.runtime.sendMessage(message).then(() => {
-      return closeOffscreenDocument();
-    }).then(() => {
+    doStopTracking().then(() => {
       sendResponse({ success: true });
     }).catch(error => {
       sendResponse({ success: false, error: error.message });
@@ -104,12 +102,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // 代理 storage 操作（offscreen 无法直接访问 chrome.storage）
+  if (message.type === 'SAVE_CALIBRATION') {
+    chrome.storage.local.set({ nodScrollCalibration: message.data });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (message.type === 'LOAD_CALIBRATION') {
+    chrome.storage.local.get(['nodScrollCalibration'], (result) => {
+      sendResponse({ success: true, data: result.nodScrollCalibration || null });
+    });
+    return true;
+  }
+
   // Forward scroll/navigate commands to active tab
   if (message.type === 'SCROLL_COMMAND') {
     console.log('Background: SCROLL_COMMAND received, direction:', message.direction);
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
         const tabId = tabs[0].id;
+        const url = tabs[0].url || '';
+        
+        // 检查是否是受限页面
+        if (url.startsWith('chrome://') || 
+            url.startsWith('edge://') || 
+            url.startsWith('chrome-extension://') ||
+            url.includes('chrome.google.com/webstore')) {
+          console.log('Cannot inject script on restricted page:', url);
+          sendResponse({ success: false, error: 'Restricted page' });
+          return;
+        }
+        
         console.log('Background: Forwarding to tab', tabId);
         chrome.tabs.sendMessage(tabId, message, (response) => {
           if (chrome.runtime.lastError) {
@@ -181,6 +205,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   return false;
+});
+
+/**
+ * 停止追踪并关闭 offscreen（供 background 内部调用）
+ */
+async function doStopTracking() {
+  if (!offscreenCreated) return;
+  try {
+    await chrome.runtime.sendMessage({ type: 'STOP_TRACKING' });
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await closeOffscreenDocument();
+  } catch (e) {
+    // offscreen 可能已关闭，忽略
+  }
+}
+
+// 监听窗口焦点变化，后台时暂停或停止追踪
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (!offscreenCreated) return;
+
+  if (windowId === chrome.windows.WINDOW_ID_NONE) {
+    // 失去焦点：根据设置决定暂停还是停止
+    chrome.storage.local.get(['nodScrollSettings'], (result) => {
+      const blurAction = result.nodScrollSettings?.blurAction || 'pause';
+      if (blurAction === 'stop') {
+        doStopTracking();
+      } else {
+        chrome.runtime.sendMessage({ type: 'PAUSE_TRACKING' }).catch(() => {});
+      }
+    });
+  } else {
+    chrome.runtime.sendMessage({ type: 'RESUME_TRACKING' }).catch(() => {});
+  }
 });
 
 // Log when service worker starts

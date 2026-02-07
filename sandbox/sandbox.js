@@ -6,7 +6,7 @@
 
 let faceMesh = null;
 const inputCanvas = document.getElementById('inputCanvas');
-const inputCtx = inputCanvas.getContext('2d');
+const inputCtx = inputCanvas.getContext('2d', { willReadFrequently: true });
 
 // 监听来自 offscreen 的消息
 window.addEventListener('message', async (event) => {

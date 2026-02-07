@@ -28,6 +28,7 @@ const scrollAmountInput = document.getElementById('scrollAmount');
 const cooldownInput = document.getElementById('cooldown');
 const scrollDirectionSelect = document.getElementById('scrollDirection');
 const turnActionSelect = document.getElementById('turnAction');
+const blurActionSelect = document.getElementById('blurAction');
 const pitchThresholdValue = document.getElementById('pitchThresholdValue');
 const yawThresholdValue = document.getElementById('yawThresholdValue');
 const scrollAmountValue = document.getElementById('scrollAmountValue');
@@ -67,9 +68,12 @@ async function init() {
   chrome.runtime.onMessage.addListener(handleOffscreenMessage);
 
   // Check if offscreen is already running
-  await checkOffscreenStatus();
+  const alreadyRunning = await checkOffscreenStatus();
 
-  updateStatus('statusReady', '');
+  // 只有在未运行时才显示 Ready
+  if (!alreadyRunning) {
+    updateStatus('statusReady', '');
+  }
 }
 
 /**
@@ -91,11 +95,13 @@ async function checkOffscreenStatus() {
       } else {
         updateStatus('statusCalibrating', 'calibrating');
       }
+      return true;
     }
   } catch (error) {
     // Offscreen not running, ignore
     console.log('Offscreen not running');
   }
+  return false;
 }
 
 /**
@@ -122,15 +128,16 @@ function applyTranslations() {
 function updateGestureHelp() {
   const isNatural = scrollDirectionSelect.value === 'natural';
   const isSwitchTab = turnActionSelect.value === 'switchTab';
+  const isNone = turnActionSelect.value === 'none';
 
   document.getElementById('helpNodDownAction').textContent =
     window.i18n.t(isNatural ? 'helpScrollUp' : 'helpScrollDown');
   document.getElementById('helpNodUpAction').textContent =
     window.i18n.t(isNatural ? 'helpScrollDown' : 'helpScrollUp');
   document.getElementById('helpTurnLeftAction').textContent =
-    window.i18n.t(isSwitchTab ? 'helpPrevTab' : 'helpGoBack');
+    window.i18n.t(isNone ? 'helpNone' : isSwitchTab ? 'helpPrevTab' : 'helpGoBack');
   document.getElementById('helpTurnRightAction').textContent =
-    window.i18n.t(isSwitchTab ? 'helpNextTab' : 'helpGoForward');
+    window.i18n.t(isNone ? 'helpNone' : isSwitchTab ? 'helpNextTab' : 'helpGoForward');
 }
 
 /**
@@ -194,6 +201,10 @@ function setupEventListeners() {
     saveSettings();
     updateGestureHelp();
   });
+
+  blurActionSelect.addEventListener('change', () => {
+    saveSettings();
+  });
 }
 
 /**
@@ -214,6 +225,7 @@ async function startTracking() {
   try {
     console.log('startTracking: Beginning...');
     updateStatus('statusStarting', '');
+    updateActionIndicator('IDLE'); // 清除旧状态
     hidePermissionError();
 
     const config = {
@@ -255,7 +267,7 @@ async function startTracking() {
     calibrateBtn.disabled = false;
     cameraPlaceholder.classList.add('hidden');
 
-    updateStatus('statusCalibrating', 'calibrating');
+    // 状态由 offscreen 的 STATUS_UPDATE 消息更新
 
   } catch (error) {
     console.error('Error starting tracking:', error);
@@ -369,7 +381,8 @@ function handleStatusUpdate(message) {
     'calibrating': ['statusCalibrating', 'calibrating'],
     'active': ['statusActive', 'active'],
     'stopped': ['statusStopped', ''],
-    'no_face': ['statusNoFace', 'error']
+    'no_face': ['statusNoFace', 'error'],
+    'paused': ['statusPaused', '']
   };
 
   const [statusKey, className] = statusMap[message.status] || ['statusError', 'error'];
@@ -524,7 +537,8 @@ function saveSettings() {
     scrollAmount: scrollAmountInput.value,
     cooldown: cooldownInput.value,
     scrollDirection: scrollDirectionSelect.value,
-    turnAction: turnActionSelect.value
+    turnAction: turnActionSelect.value,
+    blurAction: blurActionSelect.value
   };
   chrome.storage.local.set({ nodScrollSettings: settings });
 }
@@ -551,6 +565,9 @@ function loadSettings() {
       }
       if (settings.turnAction) {
         turnActionSelect.value = settings.turnAction;
+      }
+      if (settings.blurAction) {
+        blurActionSelect.value = settings.blurAction;
       }
       updateGestureHelp();
     }

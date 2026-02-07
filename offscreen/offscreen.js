@@ -6,10 +6,12 @@
 
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
-const canvasCtx = canvas.getContext('2d');
+const canvasCtx = canvas.getContext('2d', { willReadFrequently: true });
 const previewCanvas = document.createElement('canvas');
+const previewCtx = previewCanvas.getContext('2d', { willReadFrequently: true });
 
 let isRunning = false;
+let isPaused = false; // 浏览器后台时暂停
 let headTracker = null;
 let stream = null;
 let frameLoopId = null;
@@ -18,7 +20,9 @@ let sandboxIframe = null;
 
 // 帧捕获用的临时 canvas
 const captureCanvas = document.createElement('canvas');
-const captureCtx = captureCanvas.getContext('2d');
+captureCanvas.width = 320;
+captureCanvas.height = 240;
+let captureCtx = captureCanvas.getContext('2d', { willReadFrequently: true });
 
 // 鼻尖运动轨迹
 const TRAIL_MAX = 40;
@@ -64,6 +68,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } else {
         sendResponse({ success: false, error: 'Not running' });
       }
+      return true;
+
+    case 'PAUSE_TRACKING':
+      if (isRunning && !isPaused) {
+        isPaused = true;
+        notifyPopup('STATUS_UPDATE', { status: 'paused' });
+      }
+      sendResponse({ success: true });
+      return true;
+
+    case 'RESUME_TRACKING':
+      if (isRunning && isPaused) {
+        isPaused = false;
+        const status = headTracker && headTracker.isCalibrated ? 'active' : 'calibrating';
+        notifyPopup('STATUS_UPDATE', { status });
+      }
+      sendResponse({ success: true });
       return true;
 
     case 'UPDATE_CONFIG':
@@ -146,8 +167,12 @@ function sendFrameToSandbox() {
 
   const w = 320;
   const h = 240;
-  if (captureCanvas.width !== w) captureCanvas.width = w;
-  if (captureCanvas.height !== h) captureCanvas.height = h;
+  if (captureCanvas.width !== w || captureCanvas.height !== h) {
+    captureCanvas.width = w;
+    captureCanvas.height = h;
+    // 重设尺寸会重置上下文，需要重新获取
+    captureCtx = captureCanvas.getContext('2d', { willReadFrequently: true });
+  }
 
   captureCtx.drawImage(video, 0, 0, w, h);
   const imageData = captureCtx.getImageData(0, 0, w, h);
@@ -181,6 +206,15 @@ async function startTracking(config) {
       turnAction = config.turnAction;
     }
 
+    // 尝试恢复上次的校准数据
+    let calibrationRestored = false;
+    try {
+      const stored = await chrome.runtime.sendMessage({ type: 'LOAD_CALIBRATION' });
+      if (stored && stored.data) {
+        calibrationRestored = headTracker.restoreCalibration(stored.data);
+      }
+    } catch (e) { /* 忽略 */ }
+
     // 获取摄像头
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'user', width: 640, height: 480 }
@@ -200,7 +234,7 @@ async function startTracking(config) {
     // 帧处理循环
     let processing = false;
     frameLoopId = setInterval(() => {
-      if (!isRunning || video.paused || video.readyState < 2) return;
+      if (!isRunning || isPaused || video.paused || video.readyState < 2) return;
 
       // 发送预览帧（按时间节流）
       const now = Date.now();
@@ -218,7 +252,7 @@ async function startTracking(config) {
       }
     }, 33);
 
-    notifyPopup('STATUS_UPDATE', { status: 'calibrating' });
+    notifyPopup('STATUS_UPDATE', { status: calibrationRestored ? 'active' : 'calibrating' });
     return { success: true };
 
   } catch (error) {
@@ -231,12 +265,27 @@ async function startTracking(config) {
  * 停止追踪
  */
 function stopTracking() {
+  console.log('Offscreen: stopTracking called, stream:', !!stream, 'tracks:', stream ? stream.getTracks().length : 0);
   isRunning = false;
+  isPaused = false;
   sandboxReady = false;
 
   if (frameLoopId) { clearInterval(frameLoopId); frameLoopId = null; }
-  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if (video.srcObject) { video.srcObject = null; }
+
+  // 先暂停 video，断开 srcObject，再逐个停止 track
+  if (video) {
+    video.pause();
+    video.srcObject = null;
+  }
+  if (stream) {
+    const tracks = stream.getTracks();
+    tracks.forEach(t => {
+      console.log('Offscreen: stopping track', t.kind, t.label, 'readyState:', t.readyState);
+      t.stop();
+    });
+    stream = null;
+  }
+
   if (sandboxIframe) {
     sandboxIframe.contentWindow.postMessage({ type: 'DESTROY' }, '*');
     sandboxIframe.remove();
@@ -245,6 +294,7 @@ function stopTracking() {
 
   headTracker = null;
   noseTrail = [];
+  console.log('Offscreen: stopTracking complete');
   notifyPopup('STATUS_UPDATE', { status: 'stopped' });
 }
 
@@ -273,6 +323,11 @@ function onFaceResults(landmarks) {
     const pose = headTracker.calculatePose(landmarks);
     const calibrated = headTracker.calibrate(pose);
     if (calibrated) {
+      // 保存校准数据，下次启动时跳过校准
+      const calData = headTracker.exportCalibration();
+      if (calData) {
+        chrome.runtime.sendMessage({ type: 'SAVE_CALIBRATION', data: calData }).catch(() => {});
+      }
       notifyPopup('STATUS_UPDATE', { status: 'active' });
     } else {
       const progress = Math.round(headTracker.calibrationFrames.length / 30 * 100);
@@ -310,56 +365,55 @@ function sendPreviewFrame(landmarks) {
 
   const pw = previewCanvas.width;
   const ph = previewCanvas.height;
-  const pctx = previewCanvas.getContext('2d');
 
-  pctx.drawImage(video, 0, 0, pw, ph);
+  previewCtx.drawImage(video, 0, 0, pw, ph);
 
   // 鼻尖运动轨迹
   if (noseTrail.length > 1) {
-    pctx.lineCap = 'round';
-    pctx.lineJoin = 'round';
+    previewCtx.lineCap = 'round';
+    previewCtx.lineJoin = 'round';
     for (let i = 1; i < noseTrail.length; i++) {
       const alpha = i / noseTrail.length;
       const hue = 200 + alpha * 60;
-      pctx.strokeStyle = `hsla(${hue}, 80%, 60%, ${alpha * 0.8})`;
-      pctx.lineWidth = 1 + alpha * 2;
-      pctx.beginPath();
-      pctx.moveTo(noseTrail[i - 1].x * pw, noseTrail[i - 1].y * ph);
-      pctx.lineTo(noseTrail[i].x * pw, noseTrail[i].y * ph);
-      pctx.stroke();
+      previewCtx.strokeStyle = `hsla(${hue}, 80%, 60%, ${alpha * 0.8})`;
+      previewCtx.lineWidth = 1 + alpha * 2;
+      previewCtx.beginPath();
+      previewCtx.moveTo(noseTrail[i - 1].x * pw, noseTrail[i - 1].y * ph);
+      previewCtx.lineTo(noseTrail[i].x * pw, noseTrail[i].y * ph);
+      previewCtx.stroke();
     }
     // 最新点亮点
     const last = noseTrail[noseTrail.length - 1];
-    pctx.fillStyle = '#00ffcc';
-    pctx.shadowColor = '#00ffcc';
-    pctx.shadowBlur = 8;
-    pctx.beginPath();
-    pctx.arc(last.x * pw, last.y * ph, 4, 0, Math.PI * 2);
-    pctx.fill();
-    pctx.shadowBlur = 0;
+    previewCtx.fillStyle = '#00ffcc';
+    previewCtx.shadowColor = '#00ffcc';
+    previewCtx.shadowBlur = 8;
+    previewCtx.beginPath();
+    previewCtx.arc(last.x * pw, last.y * ph, 4, 0, Math.PI * 2);
+    previewCtx.fill();
+    previewCtx.shadowBlur = 0;
   }
 
   // 面部特征点和轮廓
   if (landmarks) {
-    pctx.fillStyle = '#4a90d9';
+    previewCtx.fillStyle = '#4a90d9';
     [1, 199, 33, 263, 61, 291].forEach(idx => {
       const p = landmarks[idx];
-      pctx.beginPath();
-      pctx.arc(p.x * pw, p.y * ph, 3, 0, Math.PI * 2);
-      pctx.fill();
+      previewCtx.beginPath();
+      previewCtx.arc(p.x * pw, p.y * ph, 3, 0, Math.PI * 2);
+      previewCtx.fill();
     });
 
-    pctx.strokeStyle = 'rgba(74, 144, 217, 0.4)';
-    pctx.lineWidth = 1.5;
+    previewCtx.strokeStyle = 'rgba(74, 144, 217, 0.4)';
+    previewCtx.lineWidth = 1.5;
     const oval = [10,338,297,332,284,251,389,356,454,323,361,288,
       397,365,379,378,400,377,152,148,176,149,150,136,
       172,58,132,93,234,127,162,21,54,103,67,109,10];
-    pctx.beginPath();
+    previewCtx.beginPath();
     oval.forEach((idx, i) => {
       const p = landmarks[idx];
-      i === 0 ? pctx.moveTo(p.x * pw, p.y * ph) : pctx.lineTo(p.x * pw, p.y * ph);
+      i === 0 ? previewCtx.moveTo(p.x * pw, p.y * ph) : previewCtx.lineTo(p.x * pw, p.y * ph);
     });
-    pctx.stroke();
+    previewCtx.stroke();
   }
 
   // 校准进度条
@@ -370,20 +424,20 @@ function sendPreviewFrame(landmarks) {
     const barX = (pw - barW) / 2;
     const barY = ph - 24;
 
-    pctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    pctx.fillRect(barX - 2, barY - 2, barW + 4, barH + 4);
+    previewCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    previewCtx.fillRect(barX - 2, barY - 2, barW + 4, barH + 4);
 
     const fillW = Math.max(barW * progress, 1);
-    const grad = pctx.createLinearGradient(barX, 0, barX + fillW, 0);
+    const grad = previewCtx.createLinearGradient(barX, 0, barX + fillW, 0);
     grad.addColorStop(0, '#4a90d9');
     grad.addColorStop(1, '#64f0c8');
-    pctx.fillStyle = grad;
-    pctx.fillRect(barX, barY, fillW, barH);
+    previewCtx.fillStyle = grad;
+    previewCtx.fillRect(barX, barY, fillW, barH);
 
-    pctx.fillStyle = '#fff';
-    pctx.font = '11px sans-serif';
-    pctx.textAlign = 'center';
-    pctx.fillText(`${Math.round(progress * 100)}%`, pw / 2, barY - 4);
+    previewCtx.fillStyle = '#fff';
+    previewCtx.font = '11px sans-serif';
+    previewCtx.textAlign = 'center';
+    previewCtx.fillText(`${Math.round(progress * 100)}%`, pw / 2, barY - 4);
   }
 
   try {
@@ -403,15 +457,17 @@ function handleAction(action) {
     case 'NOD_UP':   sendScrollCommand(invert ? 'down' : 'up', 300); break;
     // 注意：摄像头画面在 popup 中是镜像的，所以左右需要交换
     case 'TURN_LEFT':
+      if (turnAction === 'none') break;
       if (turnAction === 'switchTab') {
-        sendTabCommand('next'); // 镜像后：用户向左 = 实际向右 = 下一个
+        sendTabCommand('next');
       } else {
         sendNavigateCommand('forward');
       }
       break;
     case 'TURN_RIGHT':
+      if (turnAction === 'none') break;
       if (turnAction === 'switchTab') {
-        sendTabCommand('prev'); // 镜像后：用户向右 = 实际向左 = 上一个
+        sendTabCommand('prev');
       } else {
         sendNavigateCommand('back');
       }
