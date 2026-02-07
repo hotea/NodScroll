@@ -32,6 +32,8 @@ popup-old.js
 # Keep directory structure but ignore content
 docs/*
 !docs/README.md
+!docs/SEARCH_KEYWORDS.md
+!docs/STORE_LISTING.md
 
 # Development documentation
 CHANGELOG.md
