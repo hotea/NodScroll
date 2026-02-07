@@ -7,15 +7,18 @@
 **中文**: NodScroll - 头部手势控制
 
 ### 简短描述 (Short Description - 132 characters max)
-**英文**: Control webpage scrolling with head gestures using your camera. Hands-free browsing powered by AI face tracking.
+**英文**: Exercise your neck while browsing! Control scrolling with head gestures. Perfect for cervical spine health during screen time.
 
-**中文**: 使用摄像头通过头部手势控制网页滚动。AI 面部追踪技术实现免手操作浏览。
+**中文**: 边浏览边活动颈椎！通过头部手势控制滚动。长时间看屏幕的健康伴侣。
 
 ### 详细描述 (Detailed Description)
 
 **English:**
 ```
-NodScroll lets you control webpage scrolling using simple head gestures - no hands needed!
+NodScroll lets you control webpage scrolling using simple head gestures - no hands needed! Perfect for maintaining cervical spine health during long screen time.
+
+💪 HEALTH BENEFITS
+Long hours staring at screens can cause neck stiffness and pain. NodScroll encourages natural neck movement while browsing, promoting blood circulation in the cervical spine. Combine productivity with neck exercises - stay healthy while you work!
 
 🎯 HOW IT WORKS
 1. Click the extension icon and grant camera permission
@@ -41,9 +44,11 @@ NodScroll lets you control webpage scrolling using simple head gestures - no han
 • Open source - Review the code yourself
 
 💡 USE CASES
-• Reading long articles while eating
+• Long work sessions - Exercise your neck while browsing
+• Reading long articles while eating or drinking
 • Following recipes while cooking
 • Scrolling through social feeds hands-free
+• Posture awareness - Encourages active neck movement
 • Accessibility aid for limited hand mobility
 
 ⚙️ SETTINGS
@@ -69,7 +74,10 @@ Built with MediaPipe Face Mesh technology by Google.
 
 **中文:**
 ```
-NodScroll 让你通过简单的头部手势控制网页滚动 - 无需动手！
+NodScroll 让你通过简单的头部手势控制网页滚动 - 无需动手！非常适合在长时间看屏幕时活动颈椎，有利于颈椎健康。
+
+💪 健康益处
+长时间盯着屏幕容易导致颈部僵硬和疼痛。NodScroll 鼓励在浏览时自然地活动颈部，促进颈椎血液循环。将生产力与颈部锻炼相结合 - 工作的同时保持健康！
 
 🎯 使用方法
 1. 点击扩展图标并授予摄像头权限
@@ -95,9 +103,11 @@ NodScroll 让你通过简单的头部手势控制网页滚动 - 无需动手！
 • 开源代码 - 可自行审查
 
 💡 使用场景
+• 长时间工作 - 边浏览边活动颈椎
 • 边吃饭边阅读长文章
 • 边做饭边查看菜谱
 • 免手滚动浏览社交动态
+• 姿势意识 - 鼓励主动活动颈部
 • 辅助手部活动受限的用户
 
 ⚙️ 设置选项
