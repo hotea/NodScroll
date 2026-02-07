@@ -39,7 +39,7 @@ console.log('Offscreen document loaded');
 
 let scrollDirection = 'natural'; // 'classic' 或 'natural'
 let turnAction = 'switchTab'; // 'switchTab' 或 'navigate'
-let highQualityMode = true; // 高质量模式：减少叠加层，优先视频清晰度
+let highQualityMode = false; // 高质量模式：减少叠加层，优先视频清晰度（默认关闭以显示轨迹）
 
 // 监听 chrome 消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
