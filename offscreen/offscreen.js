@@ -397,52 +397,88 @@ function sendPreviewFrame(landmarks) {
 
   // 高质量模式：减少叠加层，保持视频原始清晰度
   if (!highQualityMode) {
-    // 鼻尖运动轨迹（仅在非高质量模式下绘制）
+    // 鼻尖运动轨迹（连续线条，从旧到新渐变）
     if (noseTrail.length > 1) {
-    previewCtx.lineCap = 'round';
-    previewCtx.lineJoin = 'round';
-    for (let i = 1; i < noseTrail.length; i++) {
-      const alpha = i / noseTrail.length;
-      const hue = 200 + alpha * 60;
-      previewCtx.strokeStyle = `hsla(${hue}, 80%, 60%, ${alpha * 0.8})`;
-      previewCtx.lineWidth = 1 + alpha * 2;
+      previewCtx.lineCap = 'round';
+      previewCtx.lineJoin = 'round';
+
+      // 绘制连续的轨迹路径，使用渐变色
+      for (let i = 1; i < noseTrail.length; i++) {
+        const progress = i / noseTrail.length;
+        const alpha = 0.3 + progress * 0.7; // 透明度从 0.3 到 1.0
+        const hue = 180 + progress * 80; // 色相从青色到绿色
+        const width = 2 + progress * 2; // 线宽从 2 到 4
+
+        previewCtx.strokeStyle = `hsla(${hue}, 85%, 60%, ${alpha})`;
+        previewCtx.lineWidth = width;
+        previewCtx.beginPath();
+        previewCtx.moveTo(noseTrail[i - 1].x * pw, noseTrail[i - 1].y * ph);
+        previewCtx.lineTo(noseTrail[i].x * pw, noseTrail[i].y * ph);
+        previewCtx.stroke();
+      }
+
+      // 最新点：更大更亮的指示器
+      const last = noseTrail[noseTrail.length - 1];
+
+      // 外圈光晕
+      previewCtx.fillStyle = 'rgba(0, 255, 204, 0.3)';
       previewCtx.beginPath();
-      previewCtx.moveTo(noseTrail[i - 1].x * pw, noseTrail[i - 1].y * ph);
-      previewCtx.lineTo(noseTrail[i].x * pw, noseTrail[i].y * ph);
-      previewCtx.stroke();
-    }
-    // 最新点亮点
-    const last = noseTrail[noseTrail.length - 1];
-    previewCtx.fillStyle = '#00ffcc';
-    previewCtx.shadowColor = '#00ffcc';
-    previewCtx.shadowBlur = 8;
-    previewCtx.beginPath();
-    previewCtx.arc(last.x * pw, last.y * ph, 4, 0, Math.PI * 2);
-    previewCtx.fill();
-    previewCtx.shadowBlur = 0;
+      previewCtx.arc(last.x * pw, last.y * ph, 8, 0, Math.PI * 2);
+      previewCtx.fill();
+
+      // 内圈亮点
+      previewCtx.fillStyle = '#00ffcc';
+      previewCtx.shadowColor = '#00ffcc';
+      previewCtx.shadowBlur = 10;
+      previewCtx.beginPath();
+      previewCtx.arc(last.x * pw, last.y * ph, 5, 0, Math.PI * 2);
+      previewCtx.fill();
+      previewCtx.shadowBlur = 0;
     }
 
     // 面部特征点和轮廓（仅在非高质量模式下绘制）
     if (landmarks) {
-    previewCtx.fillStyle = '#4a90d9';
-    [1, 199, 33, 263, 61, 291].forEach(idx => {
-      const p = landmarks[idx];
-      previewCtx.beginPath();
-      previewCtx.arc(p.x * pw, p.y * ph, 3, 0, Math.PI * 2);
-      previewCtx.fill();
-    });
+      // 关键特征点：鼻尖、下巴、眼睛、嘴角
+      const keyPoints = [
+        { idx: 1, label: 'Nose', color: '#ff6b6b' },      // 鼻尖 - 红色
+        { idx: 199, label: 'Chin', color: '#4ecdc4' },    // 下巴 - 青色
+        { idx: 33, label: 'L Eye', color: '#95e1d3' },    // 左眼外角 - 浅青
+        { idx: 263, label: 'R Eye', color: '#95e1d3' },   // 右眼外角 - 浅青
+        { idx: 61, label: 'L Mouth', color: '#f38181' },  // 左嘴角 - 粉红
+        { idx: 291, label: 'R Mouth', color: '#f38181' }  // 右嘴角 - 粉红
+      ];
 
-    previewCtx.strokeStyle = 'rgba(74, 144, 217, 0.4)';
-    previewCtx.lineWidth = 1.5;
-    const oval = [10,338,297,332,284,251,389,356,454,323,361,288,
-      397,365,379,378,400,377,152,148,176,149,150,136,
-      172,58,132,93,234,127,162,21,54,103,67,109,10];
-    previewCtx.beginPath();
-    oval.forEach((idx, i) => {
-      const p = landmarks[idx];
-      i === 0 ? previewCtx.moveTo(p.x * pw, p.y * ph) : previewCtx.lineTo(p.x * pw, p.y * ph);
-    });
-    previewCtx.stroke();
+      keyPoints.forEach(({ idx, color }) => {
+        const p = landmarks[idx];
+        // 外圈（光晕效果）
+        previewCtx.fillStyle = color + '40'; // 添加透明度
+        previewCtx.beginPath();
+        previewCtx.arc(p.x * pw, p.y * ph, 5, 0, Math.PI * 2);
+        previewCtx.fill();
+
+        // 内圈（实心点）
+        previewCtx.fillStyle = color;
+        previewCtx.beginPath();
+        previewCtx.arc(p.x * pw, p.y * ph, 3, 0, Math.PI * 2);
+        previewCtx.fill();
+      });
+
+      // 面部轮廓线（更平滑和清晰）
+      previewCtx.strokeStyle = 'rgba(100, 200, 255, 0.6)'; // 更亮的蓝色
+      previewCtx.lineWidth = 2;
+      previewCtx.lineCap = 'round';
+      previewCtx.lineJoin = 'round';
+
+      const oval = [10,338,297,332,284,251,389,356,454,323,361,288,
+        397,365,379,378,400,377,152,148,176,149,150,136,
+        172,58,132,93,234,127,162,21,54,103,67,109,10];
+
+      previewCtx.beginPath();
+      oval.forEach((idx, i) => {
+        const p = landmarks[idx];
+        i === 0 ? previewCtx.moveTo(p.x * pw, p.y * ph) : previewCtx.lineTo(p.x * pw, p.y * ph);
+      });
+      previewCtx.stroke();
     }
   } // 结束高质量模式条件
 
