@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "NodScroll",
+  "name": "__MSG_extensionName__",
   "version": "1.0.0",
-  "description": "Control webpage scrolling with head gestures using your camera",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "permissions": [
     "activeTab",
     "tabs",

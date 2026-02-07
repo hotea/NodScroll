@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "NodScroll - 头部手势控制",
+    "description": "扩展名称"
+  },
+  "extensionDescription": {
+    "message": "通过头部手势控制网页滚动。边浏览边活动颈椎，有利于颈椎健康。",
+    "description": "扩展描述"
+  }
+}

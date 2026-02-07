@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "NodScroll - Head Gesture Control",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Control webpage scrolling with head gestures. Exercise your neck while browsing for better cervical spine health.",
+    "description": "Extension description"
+  }
+}
