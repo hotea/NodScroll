@@ -34,9 +34,9 @@ docs/*
 !docs/README.md
 !docs/SEARCH_KEYWORDS.md
 !docs/STORE_LISTING.md
+!docs/CHROME_WEB_STORE_SUBMISSION.md
 
 # Development documentation
-CHANGELOG.md
 PROJECT_STRUCTURE.md
 
 # Development scripts
